@@ -2,12 +2,15 @@ import { Client, Collection, Events, GatewayIntentBits, MessageFlags } from "dis
 import { readdirSync } from "node:fs";
 import { join } from "node:path";
 import { startServer } from "./server";
+import { setupAutomod } from "./automod";
 
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMembers,
     GatewayIntentBits.GuildPresences,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent,
   ],
 });
 
@@ -46,5 +49,6 @@ client.on(Events.InteractionCreate, async (interaction) => {
   }
 });
 
+setupAutomod(client);
 startServer(client);
 client.login(process.env.DISCORD_TOKEN);

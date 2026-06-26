@@ -37,11 +37,12 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
   const embed = buildEmbed(roles[0]!);
 
-  const reply = await interaction.reply({
+  const response = await interaction.reply({
     embeds: [embed],
     components: [row],
-    fetchReply: true,
+    withResponse: true,
   });
+  const reply = response.resource!.message!;
 
   const collector = reply.createMessageComponentCollector({
     componentType: ComponentType.StringSelect,
