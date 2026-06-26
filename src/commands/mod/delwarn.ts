@@ -42,10 +42,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
     const warns = getWarns(target.id);
     if (!warns.length) {
-        await interaction.reply({
-            content: `✅ <@${target.id}> has no warns.`,
-            ephemeral: true,
-        });
+        await interaction.reply({ content: `✅ <@${target.id}> has no warns.`, flags: 64 });
         return;
     }
 

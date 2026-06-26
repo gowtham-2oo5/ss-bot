@@ -18,13 +18,13 @@ export const data = new SlashCommandBuilder()
 export async function execute(interaction: ChatInputCommandInteraction) {
   const guild = interaction.client.guilds.cache.get(interaction.guildId!);
   if (!guild) {
-    await interaction.reply({ content: "Could not resolve this server.", ephemeral: true });
+    await interaction.reply({ content: "Could not resolve this server.", flags: 64 });
     return;
   }
 
   const roles = ROLE_IDS.map((id) => guild.roles.cache.get(id)).filter(Boolean);
   if (!roles.length) {
-    await interaction.reply({ content: "No valid roles configured.", ephemeral: true });
+    await interaction.reply({ content: "No valid roles configured.", flags: 64 });
     return;
   }
 

@@ -9,8 +9,8 @@ export const data = new SlashCommandBuilder()
   .addStringOption((o) => o.setName("reason").setDescription("Reason"));
 
 export async function execute(interaction: ChatInputCommandInteraction) {
-  const target = interaction.options.getMember(interaction.options.getUser("user", true).id) as any;
-  if (!target) { await interaction.reply({ content: "User not found in server.", ephemeral: true }); return; }
+  const target = interaction.options.getMember("user") as any;
+  if (!target) { await interaction.reply({ content: "User not found in server.", flags: 64 }); return; }
   const reason = interaction.options.getString("reason") ?? "No reason provided";
 
   await target.send({

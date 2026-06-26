@@ -8,7 +8,7 @@ export const data = new SlashCommandBuilder()
 export async function execute(interaction: ChatInputCommandInteraction) {
   const guild = interaction.client.guilds.cache.get(interaction.guildId!);
   if (!guild) {
-    await interaction.reply({ content: "Could not resolve this server.", ephemeral: true });
+    await interaction.reply({ content: "Could not resolve this server.", flags: 64 });
     return;
   }
 

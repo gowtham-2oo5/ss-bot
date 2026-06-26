@@ -1,3 +1,6 @@
+#SQLite
+data/
+
 # dependencies
 node_modules/
 
