@@ -38,6 +38,14 @@ client.once("clientReady", (readyClient) => {
 });
 
 client.on(Events.InteractionCreate, async (interaction) => {
+  if (interaction.isModalSubmit()) {
+    if (interaction.customId === "poll_modal") {
+      const { handleModal } = await import("./src/commands/general/poll");
+      await handleModal(interaction);
+    }
+    return;
+  }
+
   if (!interaction.isChatInputCommand()) return;
 
   const command = commands.get(interaction.commandName);
