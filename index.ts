@@ -1,8 +1,8 @@
 import { Client, Collection, Events, GatewayIntentBits, MessageFlags } from "discord.js";
-import { readdirSync } from "node:fs";
+import { readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
-import { startServer } from "./server";
-import { setupAutomod } from "./automod";
+import { startServer } from "./src/modules/server";
+import { setupAutomod } from "./src/modules/automod";
 
 const client = new Client({
   intents: [
@@ -14,17 +14,24 @@ const client = new Client({
   ],
 });
 
-// Load commands
+// Load commands recursively
 const commands = new Collection<string, any>();
-const commandsPath = join(import.meta.dir, "commands");
-const commandFiles = readdirSync(commandsPath).filter((f) => f.endsWith(".ts"));
+const commandsPath = join(import.meta.dir, "src", "commands");
 
-for (const file of commandFiles) {
-  const command = await import(join(commandsPath, file));
-  if ("data" in command && "execute" in command) {
-    commands.set(command.data.name, command);
+async function loadCommands(dir: string) {
+  for (const entry of readdirSync(dir)) {
+    const full = join(dir, entry);
+    if (statSync(full).isDirectory()) {
+      await loadCommands(full);
+    } else if (entry.endsWith(".ts")) {
+      const command = await import(full);
+      if ("data" in command && "execute" in command) {
+        commands.set(command.data.name, command);
+      }
+    }
   }
 }
+await loadCommands(commandsPath);
 
 client.once("clientReady", (readyClient) => {
   console.log(`⚔️  Shadow Seneschal online — logged in as ${readyClient.user.tag}`);
