@@ -3,6 +3,7 @@ import { readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { startServer } from "./src/modules/server";
 import { setupAutomod } from "./src/modules/automod";
+import { setupWelcome } from "./src/modules/welcome";
 
 const client = new Client({
   intents: [
@@ -65,5 +66,6 @@ client.on(Events.InteractionCreate, async (interaction) => {
 });
 
 setupAutomod(client);
+setupWelcome(client);
 startServer(client);
 client.login(process.env.DISCORD_TOKEN);
