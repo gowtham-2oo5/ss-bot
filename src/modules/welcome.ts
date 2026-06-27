@@ -51,6 +51,7 @@ export function setupWelcome(client: Client) {
       .setColor(0x5865f2)
       .addFields(
         { name: "🌐 Our Website", value: `[ssanctuary.vercel.app](${WEBSITE})` },
+        { name: "🎮 Roblox Group", value: "[Shadow Sanctuary](https://www.roblox.com/communities/840771870/Shadow-Sanctuary)" },
         { name: "🔗 Invite Friends", value: `[Share this link](${invite})` },
         { name: "📜 Rules at a Glance", value: "Be respectful. No hate speech, harassment, or NSFW content. Keep conversations family-friendly." },
         { name: "🚫 Blacklisted Words", value: `\`\`\`${rulesSnippet}\`\`\`` },

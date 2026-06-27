@@ -7,7 +7,7 @@ async function getOrCreateJailRole(guild: any, jailChannelId: string) {
 
   role = await guild.roles.create({
     name: "Jailed",
-    colors: 0x2c2f33,
+    color: 0x2c2f33,
     permissions: [],
     reason: "Auto-created jail role by Shadow Seneschal",
   });

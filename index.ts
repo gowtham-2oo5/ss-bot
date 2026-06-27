@@ -1,9 +1,10 @@
-import { Client, Collection, Events, GatewayIntentBits, MessageFlags } from "discord.js";
+import { Client, Collection, Events, GatewayIntentBits, MessageFlags, Partials } from "discord.js";
 import { readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { startServer } from "./src/modules/server";
 import { setupAutomod } from "./src/modules/automod";
 import { setupWelcome } from "./src/modules/welcome";
+import { setupReactionRoles } from "./src/commands/general/reaction-roles";
 
 const client = new Client({
   intents: [
@@ -12,7 +13,9 @@ const client = new Client({
     GatewayIntentBits.GuildPresences,
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent,
+    GatewayIntentBits.GuildMessageReactions,
   ],
+  partials: [Partials.Message, Partials.Reaction, Partials.User],
 });
 
 // Load commands recursively
@@ -43,7 +46,18 @@ client.on(Events.InteractionCreate, async (interaction) => {
     if (interaction.customId === "poll_modal") {
       const { handleModal } = await import("./src/commands/general/poll");
       await handleModal(interaction);
+    } else if (interaction.customId === "rr_modal") {
+      const { handleModal } = await import("./src/commands/general/reaction-roles");
+      await handleModal(interaction);
     }
+    return;
+  }
+
+  if (interaction.isButton() && interaction.customId.startsWith("rr_btn_")) {
+    return;
+  }
+
+  if (interaction.isStringSelectMenu() && interaction.customId === "rr_dropdown") {
     return;
   }
 
@@ -67,5 +81,6 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
 setupAutomod(client);
 setupWelcome(client);
+setupReactionRoles(client);
 startServer(client);
 client.login(process.env.DISCORD_TOKEN);
