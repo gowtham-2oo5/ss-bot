@@ -29,7 +29,11 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     embeds: [new EmbedBuilder()
       .setTitle(`⚠️ You were warned in ${interaction.guild!.name}`)
       .setColor(0xfee75c)
-      .addFields({ name: "Reason", value: reason })
+      .addFields(
+        { name: "Reason", value: reason },
+        { name: "Warned by", value: `<@${interaction.user.id}>` },
+        { name: "Mistaken?", value: "Contact the owner: `first_knight780` on Discord" },
+      )
       .setTimestamp()],
   }).catch(() => {});
 

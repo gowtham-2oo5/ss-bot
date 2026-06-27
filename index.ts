@@ -5,6 +5,7 @@ import { startServer } from "./src/modules/server";
 import { setupAutomod } from "./src/modules/automod";
 import { setupWelcome } from "./src/modules/welcome";
 import { setupReactionRoles } from "./src/commands/general/reaction-roles";
+import { setupPrefix } from "./src/modules/prefix";
 
 const client = new Client({
   intents: [
@@ -82,5 +83,6 @@ client.on(Events.InteractionCreate, async (interaction) => {
 setupAutomod(client);
 setupWelcome(client);
 setupReactionRoles(client);
+setupPrefix(client);
 startServer(client);
 client.login(process.env.DISCORD_TOKEN);
