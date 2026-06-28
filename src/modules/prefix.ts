@@ -329,7 +329,7 @@ export function setupPrefix(client: Client) {
                 const reply = await message.channel.send(
                     `🗑️ Deleted **${deleted.size}** message(s).`,
                 );
-                setTimeout(() => reply.delete().catch(() => {}), 1000);
+                setTimeout(() => reply.delete().catch(() => {}), 100);
                 break;
             }
             case "ping": {

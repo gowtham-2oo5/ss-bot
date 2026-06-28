@@ -50,6 +50,9 @@ client.on(Events.InteractionCreate, async (interaction) => {
     } else if (interaction.customId === "rr_modal") {
       const { handleModal } = await import("./src/commands/general/reaction-roles");
       await handleModal(interaction);
+    } else if (interaction.customId === "giveaway_modal") {
+      const { handleModal } = await import("./src/commands/general/giveaway");
+      await handleModal(interaction);
     }
     return;
   }

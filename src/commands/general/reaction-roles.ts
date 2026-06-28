@@ -23,7 +23,7 @@ db.run(`CREATE TABLE IF NOT EXISTS reaction_roles (
   PRIMARY KEY (message_id, emoji)
 )`);
 
-const pendingSetup = new Map<string, { roles: string[] }>();
+const pendingSetup = new Map<string, { roles: string[]; emojis: string[] }>();
 
 export const data = new SlashCommandBuilder()
   .setName("reaction-roles")
@@ -46,53 +46,89 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     .setMaxValues(10);
 
   const roleRow = new ActionRowBuilder<RoleSelectMenuBuilder>().addComponents(roleMenu);
-  await interaction.reply({ content: "**Step 1:** Select roles.\n*Need a new role? Run `/create-role` first.*", components: [roleRow], flags: 64 });
+  await interaction.reply({ content: "**Step 1/3 — Select Roles**\nPick the roles you want on the panel. You can select up to 10.\n\n> 💡 *Need to create a role first? Run `/create-role` in another channel, then come back.*", components: [roleRow], flags: 64 });
 
   const reply = await interaction.fetchReply();
   const roleCollector = reply.createMessageComponentCollector({ componentType: ComponentType.RoleSelect, time: 60_000 });
 
   roleCollector.on("collect", async (ri) => {
-    pendingSetup.set(interaction.user.id, { roles: ri.values });
+    const roles = ri.values;
     roleCollector.stop();
 
-    // Step 2: Modal for title, description, and emoji mapping
-    const modal = new ModalBuilder()
-      .setCustomId("rr_modal")
-      .setTitle("Reaction Roles Panel");
+    // Step 2: React with emojis
+    const guild = interaction.guild!;
+    const roleNames = roles.map((id) => guild.roles.cache.get(id)?.name ?? id);
+    const instructions = roles.map((id, i) => `${i + 1}. <@&${id}>`).join("\n");
 
-    modal.addComponents(
-      new ActionRowBuilder<TextInputBuilder>().addComponents(
-        new TextInputBuilder()
-          .setCustomId("rr_title")
-          .setLabel("Panel Title")
-          .setPlaceholder("Pick Your Roles")
-          .setStyle(TextInputStyle.Short)
-          .setRequired(true),
-      ),
-      new ActionRowBuilder<TextInputBuilder>().addComponents(
-        new TextInputBuilder()
-          .setCustomId("rr_description")
-          .setLabel("Description (optional)")
-          .setPlaceholder("React to get your roles!")
-          .setStyle(TextInputStyle.Paragraph)
-          .setRequired(false),
-      ),
-      new ActionRowBuilder<TextInputBuilder>().addComponents(
-        new TextInputBuilder()
-          .setCustomId("rr_emojis")
-          .setLabel("Emojis (one per line, same order as roles)")
-          .setPlaceholder("🎮\n🎵\n🎨")
-          .setStyle(TextInputStyle.Paragraph)
-          .setRequired(true),
-      ),
-    );
+    await ri.update({
+      content: `**Step 2/3 — Assign Emojis**\nReact to **this message** with one emoji per role, in the order listed below.\n\n${instructions}\n\n> 💡 *Use any emoji — default or server custom. Just click them from the emoji picker in order.*\n\n⏳ Waiting for ${roles.length} reaction(s)...`,
+      components: [],
+    });
 
-    await ri.showModal(modal);
+    const updatedReply = await interaction.fetchReply();
+    const collected: string[] = [];
+
+    const reactionCollector = updatedReply.createReactionCollector({
+      filter: (_, user) => user.id === interaction.user.id,
+      max: roles.length,
+      time: 60_000,
+    });
+
+    reactionCollector.on("collect", (reaction) => {
+      const emoji = reaction.emoji.id ? `<:${reaction.emoji.name}:${reaction.emoji.id}>` : reaction.emoji.name!;
+      collected.push(emoji);
+    });
+
+    reactionCollector.on("end", async () => {
+      if (collected.length !== roles.length) {
+        await interaction.editReply({ content: `❌ Expected ${roles.length} emoji(s) but got ${collected.length}. Please run \`/reaction-roles\` again to restart.` });
+        return;
+      }
+
+      pendingSetup.set(interaction.user.id, { roles, emojis: collected });
+
+      // Step 3: Modal for title/description
+      // Can't show modal from here (no interaction context), so prompt to run a follow-up
+      // Instead, we'll use a button to trigger the modal
+      await interaction.editReply({
+        content: `✅ **Emojis captured:** ${collected.join(" ")}\n\n**Step 3/3 — Finalize**\nRun \`/reaction-roles-confirm\` now to set the panel title and post it.`,
+      });
+    });
   });
 
   roleCollector.on("end", (_, reason) => {
     if (reason === "time") interaction.editReply({ content: "Timed out.", components: [] }).catch(() => {});
   });
+}
+
+// Separate confirm command since we can't show a modal from a reaction collector
+export const confirmData = new SlashCommandBuilder()
+  .setName("reaction-roles-confirm")
+  .setDescription("Confirm and post the reaction roles panel")
+  .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
+  .setDMPermission(false);
+
+export async function confirmExecute(interaction: ChatInputCommandInteraction) {
+  const setup = pendingSetup.get(interaction.user.id);
+  if (!setup) {
+    await interaction.reply({ content: "No pending setup. Run `/reaction-roles` first.", flags: 64 });
+    return;
+  }
+
+  const modal = new ModalBuilder()
+    .setCustomId("rr_modal")
+    .setTitle("Reaction Roles Panel");
+
+  modal.addComponents(
+    new ActionRowBuilder<TextInputBuilder>().addComponents(
+      new TextInputBuilder().setCustomId("rr_title").setLabel("Panel Title").setPlaceholder("Pick Your Roles").setStyle(TextInputStyle.Short).setRequired(true),
+    ),
+    new ActionRowBuilder<TextInputBuilder>().addComponents(
+      new TextInputBuilder().setCustomId("rr_description").setLabel("Description (optional)").setPlaceholder("React to get your roles!").setStyle(TextInputStyle.Paragraph).setRequired(false),
+    ),
+  );
+
+  await interaction.showModal(modal);
 }
 
 export async function handleModal(interaction: ModalSubmitInteraction) {
@@ -101,13 +137,7 @@ export async function handleModal(interaction: ModalSubmitInteraction) {
   pendingSetup.delete(interaction.user.id);
 
   const title = interaction.fields.getTextInputValue("rr_title");
-  const description = interaction.fields.getTextInputValue("rr_description") || "React to get your roles!";
-  const emojis = interaction.fields.getTextInputValue("rr_emojis").split("\n").map((s) => s.trim()).filter(Boolean);
-
-  if (emojis.length !== setup.roles.length) {
-    await interaction.reply({ content: `Mismatch: ${setup.roles.length} roles but ${emojis.length} emojis. Try again.`, flags: 64 });
-    return;
-  }
+  const description = interaction.fields.getTextInputValue("rr_description") || "React to toggle your roles.";
 
   const channelId = getConfig("reaction_roles_channel")!;
   const channel = interaction.guild!.channels.cache.get(channelId) as any;
@@ -116,7 +146,7 @@ export async function handleModal(interaction: ModalSubmitInteraction) {
     return;
   }
 
-  const roleList = setup.roles.map((id, i) => `${emojis[i]}  —  <@&${id}>`).join("\n");
+  const roleList = setup.roles.map((id, i) => `${setup.emojis[i]}  —  <@&${id}>`).join("\n");
 
   const embed = new EmbedBuilder()
     .setTitle(title)
@@ -127,9 +157,12 @@ export async function handleModal(interaction: ModalSubmitInteraction) {
 
   const msg = await channel.send({ embeds: [embed] });
 
-  for (let i = 0; i < emojis.length; i++) {
-    await msg.react(emojis[i]).catch(() => {});
-    db.run("INSERT OR REPLACE INTO reaction_roles (message_id, emoji, role_id) VALUES (?, ?, ?)", [msg.id, emojis[i], setup.roles[i]]);
+  for (let i = 0; i < setup.emojis.length; i++) {
+    const emoji = setup.emojis[i];
+    // For custom emojis, extract the ID for reacting
+    const customMatch = emoji.match(/<:.+:(\d+)>/);
+    await msg.react(customMatch ? customMatch[1] : emoji).catch(() => {});
+    db.run("INSERT OR REPLACE INTO reaction_roles (message_id, emoji, role_id) VALUES (?, ?, ?)", [msg.id, emoji, setup.roles[i]]);
   }
 
   await interaction.reply({ content: `✅ Panel posted in <#${channelId}>`, flags: 64 });
