@@ -28,6 +28,7 @@ const categories: Record<string, { emoji: string; commands: CmdInfo[] }> = {
       { name: "jail", description: "Jail a user — strips roles, confines to one channel", usage: "/jail @user [reason]", example: "/jail @toxic Spamming" },
       { name: "unjail", description: "Release a user from jail and restore roles", usage: "/unjail @user", example: "/unjail @toxic" },
       { name: "create-role", description: "Create a new role", usage: "/create-role name [color] [clone-from] [below]", example: "/create-role Gamer #ff5733" },
+      { name: "purge", description: "Delete multiple messages", usage: "/purge count [user]", example: "/purge 50" },
     ],
   },
   General: {
@@ -38,6 +39,9 @@ const categories: Record<string, { emoji: string; commands: CmdInfo[] }> = {
       { name: "poll", description: "Create a reaction poll", usage: "/poll", example: "/poll" },
       { name: "poll-end", description: "End an active poll", usage: "/poll-end", example: "/poll-end" },
       { name: "reaction-roles", description: "Create a self-assign role panel", usage: "/reaction-roles", example: "/reaction-roles" },
+      { name: "giveaway", description: "Create a giveaway", usage: "/giveaway", example: "/giveaway" },
+      { name: "giveaway-end", description: "End an active giveaway", usage: "/giveaway-end", example: "/giveaway-end" },
+      { name: "giveaway-reroll", description: "Reroll a giveaway winner", usage: "/giveaway-reroll", example: "/giveaway-reroll" },
       { name: "help", description: "Show this help menu", usage: "/help", example: "/help" },
     ],
   },
@@ -50,6 +54,7 @@ const categories: Record<string, { emoji: string; commands: CmdInfo[] }> = {
       { name: "set-poll-channel", description: "Set poll channel", usage: "/set-poll-channel #channel", example: "/set-poll-channel #polls" },
       { name: "set-jail-channel", description: "Set jail channel", usage: "/set-jail-channel #channel", example: "/set-jail-channel #jail" },
       { name: "set-reaction-roles-channel", description: "Set reaction roles channel", usage: "/set-reaction-roles-channel #channel", example: "/set-reaction-roles-channel #roles" },
+      { name: "set-giveaway-channel", description: "Set giveaway channel", usage: "/set-giveaway-channel #channel", example: "/set-giveaway-channel #giveaways" },
     ],
   },
 };

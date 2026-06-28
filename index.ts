@@ -57,14 +57,6 @@ client.on(Events.InteractionCreate, async (interaction) => {
     return;
   }
 
-  if (interaction.isButton() && interaction.customId.startsWith("rr_btn_")) {
-    return;
-  }
-
-  if (interaction.isStringSelectMenu() && interaction.customId === "rr_dropdown") {
-    return;
-  }
-
   if (!interaction.isChatInputCommand()) return;
 
   const command = commands.get(interaction.commandName);

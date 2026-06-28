@@ -55,20 +55,18 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     const roles = ri.values;
     roleCollector.stop();
 
-    // Step 2: React with emojis
-    const guild = interaction.guild!;
-    const roleNames = roles.map((id) => guild.roles.cache.get(id)?.name ?? id);
     const instructions = roles.map((id, i) => `${i + 1}. <@&${id}>`).join("\n");
 
-    await ri.update({
-      content: `**Step 2/3 — Assign Emojis**\nReact to **this message** with one emoji per role, in the order listed below.\n\n${instructions}\n\n> 💡 *Use any emoji — default or server custom. Just click them from the emoji picker in order.*\n\n⏳ Waiting for ${roles.length} reaction(s)...`,
-      components: [],
-    });
+    await ri.update({ content: "✅ Roles selected. Check the channel for the emoji collection message.", components: [] });
 
-    const updatedReply = await interaction.fetchReply();
+    // Send a public temp message (can't react to ephemeral)
+    const tempMsg = await interaction.channel!.send(
+      `**Step 2/3 — Assign Emojis** (from <@${interaction.user.id}>)\nReact to **this message** with one emoji per role, in order:\n\n${instructions}\n\n> 💡 *Use any emoji — default or server custom. Click them from the picker in order.*\n\n⏳ Waiting for ${roles.length} reaction(s)...`
+    );
+
     const collected: string[] = [];
 
-    const reactionCollector = updatedReply.createReactionCollector({
+    const reactionCollector = tempMsg.createReactionCollector({
       filter: (_, user) => user.id === interaction.user.id,
       max: roles.length,
       time: 60_000,
@@ -80,18 +78,18 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     });
 
     reactionCollector.on("end", async () => {
+      await tempMsg.delete().catch(() => {});
+
       if (collected.length !== roles.length) {
-        await interaction.editReply({ content: `❌ Expected ${roles.length} emoji(s) but got ${collected.length}. Please run \`/reaction-roles\` again to restart.` });
+        await interaction.followUp({ content: `❌ Expected ${roles.length} emoji(s) but got ${collected.length}. Run \`/reaction-roles\` again.`, flags: 64 });
         return;
       }
 
       pendingSetup.set(interaction.user.id, { roles, emojis: collected });
 
-      // Step 3: Modal for title/description
-      // Can't show modal from here (no interaction context), so prompt to run a follow-up
-      // Instead, we'll use a button to trigger the modal
-      await interaction.editReply({
+      await interaction.followUp({
         content: `✅ **Emojis captured:** ${collected.join(" ")}\n\n**Step 3/3 — Finalize**\nRun \`/reaction-roles-confirm\` now to set the panel title and post it.`,
+        flags: 64,
       });
     });
   });
