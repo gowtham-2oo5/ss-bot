@@ -6,6 +6,7 @@ import { setupAutomod } from "./src/modules/automod";
 import { setupWelcome } from "./src/modules/welcome";
 import { setupReactionRoles } from "./src/commands/general/reaction-roles";
 import { setupPrefix } from "./src/modules/prefix";
+import { setupAntispam } from "./src/modules/antispam";
 
 const client = new Client({
   intents: [
@@ -79,5 +80,6 @@ setupAutomod(client);
 setupWelcome(client);
 setupReactionRoles(client);
 setupPrefix(client);
+setupAntispam(client);
 startServer(client);
 client.login(process.env.DISCORD_TOKEN);

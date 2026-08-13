@@ -9,26 +9,16 @@ const BANNED_WORDS = (process.env.BANNED_WORDS ?? "")
 const strikes = new Map<string, number>();
 const MAX_STRIKES = 3;
 
-// Strip non-alpha and decode leet speak to catch bypasses
-function normalize(text: string): string {
-  return text
-    .toLowerCase()
-    .replace(/0/g, "o")
-    .replace(/1/g, "i")
-    .replace(/3/g, "e")
-    .replace(/4/g, "a")
-    .replace(/5/g, "s")
-    .replace(/\$/g, "s")
-    .replace(/@/g, "a")
-    .replace(/!/g, "i")
-    .replace(/\+/g, "t")
-    .replace(/ph/g, "f")
-    .replace(/[^a-z]/g, "");
-}
-
 function containsBannedWord(content: string): boolean {
-  const cleaned = normalize(content);
-  return BANNED_WORDS.some((word) => cleaned.includes(word));
+  const text = content.toLowerCase();
+  // Check whole words
+  if (BANNED_WORDS.some((word) => new RegExp(`\\b${word}\\b`).test(text))) return true;
+  // Check spaced-out bypass (e.g. "f u c k" or "f.u.c.k")
+  const collapsed = text.replace(/[^a-z]/g, "");
+  if (collapsed.length <= 6) {
+    return BANNED_WORDS.some((word) => collapsed === word);
+  }
+  return false;
 }
 
 export function setupAutomod(client: Client) {

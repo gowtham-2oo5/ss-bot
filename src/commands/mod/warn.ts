@@ -1,15 +1,29 @@
-import { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits, type ChatInputCommandInteraction } from "discord.js";
+import { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits, MessageFlags, type ChatInputCommandInteraction } from "discord.js";
 import { addWarn } from "../../modules/warns";
+
+const warnExceptions = (process.env.WARN_EXCEPTIONS ?? "")
+  .split(",")
+  .map((id) => id.trim())
+  .filter(Boolean);
 
 export const data = new SlashCommandBuilder()
   .setName("warn")
   .setDescription("Warn a user")
-  .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
   .setDMPermission(false)
   .addUserOption((o) => o.setName("user").setDescription("User to warn").setRequired(true))
   .addStringOption((o) => o.setName("reason").setDescription("Reason for warning").setRequired(true));
 
 export async function execute(interaction: ChatInputCommandInteraction) {
+  const hasPermission = interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild);
+  const isException = warnExceptions.includes(interaction.user.id);
+
+  if (!hasPermission && !isException) {
+    return interaction.reply({
+      content: "❌ You don't have permission to use this command.",
+      flags: MessageFlags.Ephemeral,
+    });
+  }
+
   const target = interaction.options.getUser("user", true);
   const reason = interaction.options.getString("reason", true);
   const warn = addWarn(target.id, interaction.user.id, reason);
